@@ -1079,6 +1079,13 @@ def api_register():
     
     # Hash password and create user
     password_hash = hash_password(password)
+    
+    # Get device info for tracking
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if client_ip and ',' in client_ip:
+        client_ip = client_ip.split(',')[0].strip()
+    user_agent = request.headers.get('User-Agent', '')
+    
     profile = {
         "language": language,
         "persona": PERSONA_STYLE,
@@ -1087,7 +1094,12 @@ def api_register():
         "email_verified": False,
         "user_type": user_type,  # demo, tester, normal
         "tier": "Starter",
-        "registered_at": utc_now_iso()
+        "registered_at": utc_now_iso(),
+        "device_info": {
+            "ip": client_ip,
+            "user_agent": user_agent,
+            "registered_at": utc_now_iso()
+        }
     }
     
     upsert_user(username, profile=profile)
@@ -1840,6 +1852,151 @@ def admin_users_delete():
     
     log_audit("admin_user_deleted", {"user_id": user_id})
     return jsonify({"ok": True, "message": f"User {user_id} deleted"}), 200
+
+
+# ============================================
+# DEMO TO USER UPGRADE
+# ============================================
+
+@app.post("/admin/upgrade-demo")
+def admin_upgrade_demo():
+    """Upgrade demo account(s) to full user account with IP/MAC tracking."""
+    if not _admin_ok(request):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    payload = request.get_json(silent=True) or {}
+    user_ids = payload.get("userIds", [])  # Batch upgrade
+    user_id = payload.get("userId", "").strip()  # Single upgrade
+    
+    # Support both single and batch
+    if user_id and not user_ids:
+        user_ids = [user_id]
+    
+    if not user_ids:
+        return jsonify({"error": "userId or userIds required"}), 400
+    
+    upgraded = []
+    failed = []
+    
+    for uid in user_ids:
+        try:
+            with db() as con:
+                row = con.execute("SELECT profile_json FROM users WHERE user_id = ?", (uid,)).fetchone()
+                if not row:
+                    failed.append({"userId": uid, "error": "User not found"})
+                    continue
+                
+                profile = json.loads(row["profile_json"])
+                old_type = profile.get("user_type", "demo")
+                
+                # Upgrade to user
+                profile["user_type"] = "user"
+                profile["upgraded_from_demo"] = True
+                profile["upgraded_at"] = utc_now_iso()
+                profile["upgraded_by"] = "admin"
+                
+                con.execute("UPDATE users SET profile_json = ? WHERE user_id = ?",
+                           (json.dumps(profile, ensure_ascii=False), uid))
+                con.commit()
+            
+            log_audit("demo_upgraded", {"user_id": uid, "old_type": old_type}, user_id=uid)
+            upgraded.append({"userId": uid, "oldType": old_type, "newType": "user"})
+        except Exception as e:
+            failed.append({"userId": uid, "error": str(e)})
+    
+    return jsonify({
+        "ok": True,
+        "upgraded": upgraded,
+        "upgradedCount": len(upgraded),
+        "failed": failed,
+        "failedCount": len(failed)
+    }), 200
+
+
+@app.post("/api/upgrade-to-user")
+def api_upgrade_to_user():
+    """Self-upgrade from demo account to full user account."""
+    payload = request.get_json(silent=True) or {}
+    user_id = payload.get("userId", "").strip()
+    email = payload.get("email", "").strip()
+    password = payload.get("password", "")
+    
+    if not user_id:
+        return jsonify({"error": "userId required"}), 400
+    if not email or "@" not in email:
+        return jsonify({"error": "Valid email required"}), 400
+    if not password or len(password) < 8:
+        return jsonify({"error": "Password must be at least 8 characters"}), 400
+    
+    # Get device info
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if client_ip and ',' in client_ip:
+        client_ip = client_ip.split(',')[0].strip()
+    user_agent = request.headers.get('User-Agent', '')
+    
+    with db() as con:
+        row = con.execute("SELECT profile_json FROM users WHERE user_id = ?", (user_id,)).fetchone()
+        if not row:
+            return jsonify({"error": "User not found"}), 404
+        
+        profile = json.loads(row["profile_json"])
+        old_type = profile.get("user_type", "demo")
+        
+        if old_type not in ("demo", "tester"):
+            return jsonify({"error": "Account is already a full user"}), 400
+        
+        # Check if email is already used
+        rows = con.execute("SELECT user_id, profile_json FROM users").fetchall()
+        for r in rows:
+            if r["user_id"] != user_id:
+                try:
+                    p = json.loads(r["profile_json"])
+                    if p.get("email", "").lower() == email.lower():
+                        return jsonify({"error": "Email already in use"}), 409
+                except:
+                    pass
+        
+        # Upgrade account
+        profile["user_type"] = "user"
+        profile["email"] = email
+        profile["password_hash"] = hash_password(password)
+        profile["email_verified"] = False
+        profile["upgraded_from_demo"] = True
+        profile["upgraded_at"] = utc_now_iso()
+        profile["device_info"] = {
+            "ip": client_ip,
+            "user_agent": user_agent,
+            "upgraded_at": utc_now_iso()
+        }
+        
+        con.execute("UPDATE users SET profile_json = ? WHERE user_id = ?",
+                   (json.dumps(profile, ensure_ascii=False), user_id))
+        con.commit()
+    
+    # Send verification email
+    if SMTP_USER:
+        try:
+            token = create_token(user_id, "email_verify", expires_hours=48)
+            verify_url = f"{request.host_url}verify-email?token={token}&user={user_id}"
+            html_body = f"""
+            <h1>Welcome to KELION AI!</h1>
+            <p>Hi {user_id},</p>
+            <p>Your demo account has been upgraded. Please verify your email:</p>
+            <p><a href="{verify_url}" style="background:#00f3ff;color:#000;padding:10px 20px;text-decoration:none;border-radius:5px;">Verify Email</a></p>
+            """
+            send_email(email, "KELION AI - Verify Your Upgraded Account", html_body)
+        except Exception as e:
+            logger.warning(f"Failed to send upgrade verification: {e}")
+    
+    log_audit("demo_self_upgraded", {"user_id": user_id, "ip": client_ip}, user_id=user_id)
+    
+    return jsonify({
+        "ok": True,
+        "userId": user_id,
+        "oldType": old_type,
+        "newType": "user",
+        "email_verification_sent": bool(SMTP_USER)
+    }), 200
 
 
 @app.post("/api/chat")
