@@ -314,13 +314,25 @@ function initWakeWordDetection() {
 
     wakeWordRecognition.onresult = (event) => {
         for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript.toLowerCase().trim();
-            // Wake words: "k", "kelion", "hey k", "okay k"
-            if (transcript.includes('kelion') || transcript === 'k' ||
-                transcript.includes('hey k') || transcript.includes('okay k') ||
-                transcript.endsWith(' k') || transcript.startsWith('k ')) {
+            const result = event.results[i];
+            const transcript = result[0].transcript.toLowerCase().trim();
+            const confidence = result[0].confidence;
 
-                console.log('🎤 Wake word detected:', transcript);
+            // Noise filter: require minimum confidence level
+            if (confidence < 0.7) continue;
+
+            // Minimum length filter (avoid single letter false triggers)
+            if (transcript.length < 1) continue;
+
+            // Wake words: "k", "kelion", "hey k", "okay k"
+            const isWakeWord = transcript.includes('kelion') ||
+                transcript === 'k' || transcript === 'kay' ||
+                transcript.includes('hey k') || transcript.includes('okay k') ||
+                transcript.includes('ok k') || transcript.includes('hey kay') ||
+                transcript.endsWith(' k') || transcript.startsWith('k ');
+
+            if (isWakeWord) {
+                console.log('🎤 Wake word detected:', transcript, 'confidence:', confidence);
                 activateListening();
                 break;
             }
