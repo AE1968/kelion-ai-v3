@@ -5,13 +5,17 @@ import { HologramUnit } from "./holograma_k.js";
 // Language Management
 let currentLanguage = 'en';
 const VOICE_PREFS = {
-    'en': ['Microsoft David Desktop', 'Microsoft David', 'Google UK English Male', 'Daniel', 'Alex'],
-    'ro': ['Microsoft Andrei', 'Andrei', 'Google română'],
-    'de': ['Microsoft Stefan Desktop', 'Microsoft Stefan', 'Google Deutsch', 'Markus'],
-    'fr': ['Microsoft Paul Desktop', 'Microsoft Paul', 'Thomas', 'Google français'],
-    'es': ['Microsoft Pablo Desktop', 'Microsoft Pablo', 'Jorge', 'Diego', 'Google español'],
-    'it': ['Microsoft Cosimo Desktop', 'Microsoft Cosimo', 'Luca', 'Google italiano'],
-    'default': ['Microsoft David Desktop', 'Microsoft David', 'Daniel']
+    'en': ['Microsoft David Desktop', 'Microsoft David', 'Google UK English Male', 'Daniel', 'Alex', 'Samantha'],
+    'ro': ['Microsoft Andrei', 'Andrei', 'Google română', 'Ioana'],
+    'de': ['Microsoft Stefan Desktop', 'Microsoft Stefan', 'Google Deutsch', 'Markus', 'Anna'],
+    'fr': ['Microsoft Paul Desktop', 'Microsoft Paul', 'Thomas', 'Google français', 'Amélie'],
+    'es': ['Microsoft Pablo Desktop', 'Microsoft Pablo', 'Jorge', 'Diego', 'Google español', 'Monica'],
+    'it': ['Microsoft Cosimo Desktop', 'Microsoft Cosimo', 'Luca', 'Google italiano', 'Alice'],
+    'pt': ['Microsoft Helia Desktop', 'Microsoft Helia', 'Google português', 'Luciana', 'Joana'],
+    'ru': ['Microsoft Pavel Desktop', 'Microsoft Pavel', 'Google русский', 'Milena', 'Yuri'],
+    'zh': ['Microsoft Huihui Desktop', 'Microsoft Huihui', 'Google 普通话', 'Ting-Ting', 'Lili'],
+    'ja': ['Microsoft Ayumi Desktop', 'Microsoft Ayumi', 'Google 日本語', 'Kyoko', 'Otoya'],
+    'default': ['Microsoft David Desktop', 'Microsoft David', 'Daniel', 'Alex']
 };
 
 function getCurrentUserLanguage() {
