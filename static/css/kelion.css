@@ -4283,3 +4283,226 @@ textarea {
   right: 20px;
   z-index: 100;
 }
+
+/* ========================================
+   NEW REGISTRATION FLOW STYLES
+   ======================================== */
+
+/* Choice Buttons */
+.k1-choice-title {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.k1-choice-btn {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 243, 255, 0.3);
+  border-radius: 12px;
+  background: rgba(0, 20, 40, 0.6);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.k1-choice-btn:hover {
+  border-color: var(--cyan);
+  background: rgba(0, 243, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(0, 243, 255, 0.2);
+}
+
+.k1-choice-icon {
+  font-size: 1.8rem;
+}
+
+.k1-choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.k1-choice-text strong {
+  font-size: 1.1rem;
+  color: var(--cyan);
+}
+
+.k1-choice-text small {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.k1-choice-demo:hover {
+  border-color: #ffd700;
+  box-shadow: 0 5px 20px rgba(255, 215, 0, 0.2);
+}
+
+.k1-choice-demo:hover .k1-choice-text strong {
+  color: #ffd700;
+}
+
+.k1-choice-divider {
+  display: flex;
+  align-items: center;
+  margin: 15px 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+}
+
+.k1-choice-divider::before,
+.k1-choice-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.k1-choice-divider span {
+  padding: 0 15px;
+}
+
+.k1-existing-user {
+  margin-top: 25px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.k1-existing-user a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+
+.k1-existing-user a:hover {
+  text-decoration: underline;
+}
+
+/* Step Header */
+.k1-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.k1-step-icon {
+  font-size: 1.5rem;
+}
+
+/* Checkbox Group */
+.k1-checkbox-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.k1-checkbox-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--cyan);
+}
+
+.k1-checkbox-group label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+
+.k1-checkbox-group a {
+  color: var(--cyan);
+}
+
+/* Testing Notice */
+.k1-testing-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+  margin: 15px 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.k1-notice-icon {
+  font-size: 1.2rem;
+}
+
+/* Verification Sent Screen */
+.k1-verification-sent {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.k1-verify-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.k1-verification-sent h3 {
+  font-size: 1.5rem;
+  color: var(--cyan);
+  margin-bottom: 15px;
+}
+
+.k1-verification-sent p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 10px 0;
+}
+
+.k1-verify-hint {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.k1-resend-btn {
+  margin-top: 20px;
+  padding: 10px 25px;
+  background: transparent;
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.k1-resend-btn:hover {
+  background: rgba(0, 243, 255, 0.1);
+}
+
+/* Language Validation Message */
+.k1-lang-validation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background: rgba(0, 243, 255, 0.1);
+  border: 1px solid rgba(0, 243, 255, 0.3);
+  border-radius: 8px;
+  margin: 10px 0;
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -94,71 +94,87 @@
           <!-- STEP-BASED AUTH FLOW -->
           <div class="k1-auth-flow">
 
-            <!-- STEP 1: Email/Username -->
-            <div class="k1-auth-step active" id="authStep1">
-              <form id="k1Step1Form" class="k1-login-form">
-                <div class="k1-form-group">
-                  <label for="authIdentifier">EMAIL OR USERNAME</label>
-                  <input type="text" id="authIdentifier" placeholder="Enter email or username" autocomplete="username"
-                    required>
-                </div>
-                <button type="submit" class="k1-login-btn">
-                  <span class="k1-btn-glow"></span>
-                  <span class="k1-btn-text">CONTINUE</span>
-                  <span class="k1-btn-arrow">→</span>
-                </button>
-              </form>
+            <!-- STEP 0: Choose Demo or Account -->
+            <div class="k1-auth-step active" id="authStep0">
+              <div class="k1-choice-title">How would you like to access?</div>
 
-              <!-- Quick Demo Access -->
-              <div class="k1-quick-access">
-                <div class="k1-quick-divider"><span>OR</span></div>
-                <button id="k1UseDemoBtn" class="k1-demo-btn">
-                  <span class="k1-demo-icon">⚡</span>
-                  <span>Quick Demo Access</span>
-                </button>
+              <button id="k1ChooseDemo" class="k1-choice-btn k1-choice-demo">
+                <span class="k1-choice-icon">⚡</span>
+                <span class="k1-choice-text">
+                  <strong>Demo Access</strong>
+                  <small>Quick trial • 30 min/day • No registration</small>
+                </span>
+              </button>
+
+              <div class="k1-choice-divider"><span>OR</span></div>
+
+              <button id="k1ChooseAccount" class="k1-choice-btn k1-choice-account">
+                <span class="k1-choice-icon">🔐</span>
+                <span class="k1-choice-text">
+                  <strong>Create Account</strong>
+                  <small>Full access • Save progress • Email required</small>
+                </span>
+              </button>
+
+              <div class="k1-existing-user">
+                Already have an account? <a href="#" id="k1LoginExisting">Sign in</a>
               </div>
             </div>
 
-            <!-- STEP 2: Password (for existing users) -->
-            <div class="k1-auth-step" id="authStep2">
-              <div class="k1-user-badge" id="userBadge">
-                <span class="k1-user-avatar">👤</span>
-                <span class="k1-user-name" id="displayUsername">user</span>
-                <button type="button" class="k1-change-user" id="changeUserBtn">Change</button>
+            <!-- STEP 1: Login (existing user) -->
+            <div class="k1-auth-step" id="authStep1">
+              <div class="k1-step-header">
+                <span class="k1-step-icon">👤</span>
+                <span>Sign in to your account</span>
               </div>
-              <form id="k1Step2Form" class="k1-login-form">
+              <form id="k1LoginForm" class="k1-login-form">
                 <div class="k1-form-group">
-                  <label for="authPassword">PASSWORD</label>
-                  <input type="password" id="authPassword" placeholder="Enter password" autocomplete="current-password"
+                  <label for="loginUsername">USERNAME OR EMAIL</label>
+                  <input type="text" id="loginUsername" placeholder="Enter username or email" autocomplete="username"
                     required>
-                  <button type="button" class="k1-show-password" id="togglePassword">👁</button>
+                </div>
+                <div class="k1-form-group">
+                  <label for="loginPassword">PASSWORD</label>
+                  <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password"
+                    required>
+                  <button type="button" class="k1-show-password" id="toggleLoginPassword">👁</button>
                 </div>
                 <button type="submit" class="k1-login-btn">
                   <span class="k1-btn-glow"></span>
-                  <span class="k1-btn-text">ACCESS SYSTEM</span>
+                  <span class="k1-btn-text">SIGN IN</span>
                 </button>
                 <div class="k1-forgot-password">
                   <a href="#" id="k1ForgotPasswordBtn">Forgot password?</a>
                 </div>
               </form>
+              <button type="button" class="k1-back-btn" id="backToStep0Login">← Back</button>
             </div>
 
-            <!-- STEP 3: New User Registration -->
-            <div class="k1-auth-step" id="authStep3">
-              <div class="k1-welcome-new">
-                <span class="k1-welcome-icon">✨</span>
-                <span>Welcome! Create your account</span>
+            <!-- STEP 2: Registration Form -->
+            <div class="k1-auth-step" id="authStep2">
+              <div class="k1-step-header">
+                <span class="k1-step-icon">✨</span>
+                <span>Create your account</span>
               </div>
               <form id="k1RegisterForm" class="k1-login-form">
-                <input type="hidden" id="registerUsername">
                 <div class="k1-form-group">
-                  <label for="registerEmail">EMAIL (optional)</label>
-                  <input type="email" id="registerEmail" placeholder="your@email.com" autocomplete="email">
+                  <label for="registerUsername">USERNAME *</label>
+                  <input type="text" id="registerUsername" placeholder="Choose a username" autocomplete="username"
+                    required minlength="3">
                 </div>
                 <div class="k1-form-group">
-                  <label for="registerPassword">CREATE PASSWORD</label>
-                  <input type="password" id="registerPassword" placeholder="Choose a strong password"
-                    autocomplete="new-password" required minlength="4">
+                  <label for="registerEmail">EMAIL *</label>
+                  <input type="email" id="registerEmail" placeholder="your@email.com" autocomplete="email" required>
+                </div>
+                <div class="k1-form-group">
+                  <label for="registerPassword">PASSWORD *</label>
+                  <input type="password" id="registerPassword" placeholder="Minimum 8 characters"
+                    autocomplete="new-password" required minlength="8">
+                </div>
+                <div class="k1-form-group">
+                  <label for="registerPasswordConfirm">CONFIRM PASSWORD *</label>
+                  <input type="password" id="registerPasswordConfirm" placeholder="Repeat password"
+                    autocomplete="new-password" required>
                 </div>
                 <div class="k1-form-group">
                   <label for="registerLanguage">PREFERRED LANGUAGE</label>
@@ -175,12 +191,33 @@
                     <option value="ja">🇯🇵 日本語</option>
                   </select>
                 </div>
+                <div class="k1-form-group k1-checkbox-group">
+                  <input type="checkbox" id="registerTerms" required>
+                  <label for="registerTerms">I agree to the <a href="/terms" target="_blank">Terms &
+                      Conditions</a></label>
+                </div>
+                <div class="k1-testing-notice">
+                  <span class="k1-notice-icon">🧪</span>
+                  <span>All accounts are in testing period. You'll get full access soon!</span>
+                </div>
                 <button type="submit" class="k1-login-btn k1-register-btn">
                   <span class="k1-btn-glow"></span>
                   <span class="k1-btn-text">CREATE ACCOUNT</span>
                 </button>
-                <button type="button" class="k1-back-btn" id="backToStep1">← Back</button>
               </form>
+              <button type="button" class="k1-back-btn" id="backToStep0Register">← Back</button>
+            </div>
+
+            <!-- STEP 3: Email Verification Sent -->
+            <div class="k1-auth-step" id="authStep3">
+              <div class="k1-verification-sent">
+                <span class="k1-verify-icon">📧</span>
+                <h3>Check your email!</h3>
+                <p>We sent a verification link to <strong id="sentToEmail">your@email.com</strong></p>
+                <p class="k1-verify-hint">Click the link in the email to activate your account.</p>
+                <button type="button" class="k1-resend-btn" id="k1ResendEmail">Resend email</button>
+                <button type="button" class="k1-back-btn" id="backToStep0Verify">← Back to start</button>
+              </div>
             </div>
 
           </div>

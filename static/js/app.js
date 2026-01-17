@@ -299,151 +299,183 @@ function showLoginPage() {
 }
 
 function initLoginHandlers() {
-    const step1Form = $('k1Step1Form');
-    const step2Form = $('k1Step2Form');
-    const registerForm = $('k1RegisterForm');
-    const useDemoBtn = $('k1UseDemoBtn');
-    const changeUserBtn = $('changeUserBtn');
-    const backToStep1Btn = $('backToStep1');
-    const togglePasswordBtn = $('togglePassword');
-
+    const step0 = $('authStep0');
     const step1 = $('authStep1');
     const step2 = $('authStep2');
     const step3 = $('authStep3');
 
-    let currentUsername = '';
+    const chooseDemoBtn = $('k1ChooseDemo');
+    const chooseAccountBtn = $('k1ChooseAccount');
+    const loginExistingBtn = $('k1LoginExisting');
+    const loginForm = $('k1LoginForm');
+    const registerForm = $('k1RegisterForm');
+    const backToStep0Login = $('backToStep0Login');
+    const backToStep0Register = $('backToStep0Register');
+    const backToStep0Verify = $('backToStep0Verify');
+    const toggleLoginPassword = $('toggleLoginPassword');
+    const resendEmailBtn = $('k1ResendEmail');
+    const registerLanguage = $('registerLanguage');
+
+    // Language validation messages
+    const LANG_MESSAGES = {
+        'en': 'English language selected. Welcome!',
+        'ro': 'Limbă română selectată. Bine ai venit!',
+        'de': 'Deutsche Sprache ausgewählt. Willkommen!',
+        'fr': 'Langue française sélectionnée. Bienvenue!',
+        'es': 'Idioma español seleccionado. ¡Bienvenido!',
+        'it': 'Lingua italiana selezionata. Benvenuto!',
+        'pt': 'Idioma português selecionado. Bem-vindo!',
+        'ru': 'Русский язык выбран. Добро пожаловать!',
+        'zh': '已选择中文。欢迎！',
+        'ja': '日本語が選択されました。ようこそ！'
+    };
 
     // Helper to switch steps
     function goToStep(stepNum) {
-        [step1, step2, step3].forEach(s => s && s.classList.remove('active'));
+        [step0, step1, step2, step3].forEach(s => s && s.classList.remove('active'));
+        if (stepNum === 0 && step0) step0.classList.add('active');
         if (stepNum === 1 && step1) step1.classList.add('active');
         if (stepNum === 2 && step2) step2.classList.add('active');
         if (stepNum === 3 && step3) step3.classList.add('active');
         hideError();
     }
 
-    // Step 1: Email/Username submission
-    if (step1Form) {
-        step1Form.onsubmit = async (e) => {
-            e.preventDefault();
-            const identifier = $('authIdentifier').value.trim();
-            if (!identifier) return;
-            currentUsername = identifier;
-
-            // Check if user exists
-            try {
-                const res = await fetch('/api/check-user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: identifier })
-                });
-                const data = await res.json();
-
-                if (data.exists) {
-                    // Existing user - go to password step
-                    $('displayUsername').textContent = identifier;
-                    goToStep(2);
-                    setTimeout(() => $('authPassword').focus(), 100);
-                } else {
-                    // New user - go to registration step
-                    $('registerUsername').value = identifier;
-                    goToStep(3);
-                    setTimeout(() => $('registerEmail').focus(), 100);
-                }
-            } catch (e) {
-                // Fallback: assume existing user
-                $('displayUsername').textContent = identifier;
-                goToStep(2);
-            }
+    // STEP 0: Demo button - quick access
+    if (chooseDemoBtn) {
+        chooseDemoBtn.onclick = () => {
+            sessionStorage.setItem('k1_authenticated', 'true');
+            localStorage.setItem('k1_user', 'demo');
+            currentLanguage = 'en';
+            transitionToHologram();
         };
     }
 
-    // Step 2: Password submission (existing user)
-    if (step2Form) {
-        step2Form.onsubmit = async (e) => {
+    // STEP 0: Create Account button
+    if (chooseAccountBtn) {
+        chooseAccountBtn.onclick = () => {
+            goToStep(2);
+            setTimeout(() => $('registerUsername') && $('registerUsername').focus(), 100);
+        };
+    }
+
+    // STEP 0: Login existing user link
+    if (loginExistingBtn) {
+        loginExistingBtn.onclick = (e) => {
             e.preventDefault();
-            const password = $('authPassword').value;
-            if (!password) return;
+            goToStep(1);
+            setTimeout(() => $('loginUsername') && $('loginUsername').focus(), 100);
+        };
+    }
+
+    // STEP 1: Login form submission
+    if (loginForm) {
+        loginForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const username = $('loginUsername').value.trim();
+            const password = $('loginPassword').value;
+            if (!username || !password) return;
 
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUsername, user: currentUsername, password })
+                    body: JSON.stringify({ userId: username, user: username, password })
                 });
                 const data = await res.json();
 
-                if (res.ok || (currentUsername === 'demo' && password === 'demo')) {
+                if (res.ok) {
                     sessionStorage.setItem('k1_authenticated', 'true');
                     sessionStorage.setItem('k1_api_token', data.token || 'temp');
-                    localStorage.setItem('k1_user', currentUsername);
-                    localStorage.setItem('k1_user_id', data.userId || currentUsername);
+                    localStorage.setItem('k1_user', username);
+                    localStorage.setItem('k1_user_id', data.userId || username);
+                    if (data.language) setCurrentLanguage(data.language);
                     if (data.adminToken) localStorage.setItem('k1_admin_token', data.adminToken);
                     transitionToHologram();
-                } else { showError(data.error || 'Invalid password'); }
+                } else { showError(data.error || 'Invalid credentials'); }
             } catch (e) {
-                if (currentUsername === 'demo' && password === 'demo') {
-                    sessionStorage.setItem('k1_authenticated', 'true');
-                    localStorage.setItem('k1_user', 'demo');
-                    transitionToHologram();
-                } else { showError('Connection error'); }
+                showError('Connection error');
             }
         };
     }
 
-    // Step 3: Registration
+    // STEP 2: Registration form with email confirmation
     if (registerForm) {
         registerForm.onsubmit = async (e) => {
             e.preventDefault();
-            const username = $('registerUsername').value.trim() || currentUsername;
+            const username = $('registerUsername').value.trim();
             const email = $('registerEmail').value.trim();
             const password = $('registerPassword').value;
-            const language = $('registerLanguage') ? $('registerLanguage').value : 'en';
+            const passwordConfirm = $('registerPasswordConfirm').value;
+            const language = registerLanguage ? registerLanguage.value : 'en';
+            const termsAccepted = $('registerTerms') && $('registerTerms').checked;
 
-            if (!password || password.length < 4) { showError('Password must be at least 4 characters'); return; }
+            // Validations
+            if (!username || username.length < 3) { showError('Username must be at least 3 characters'); return; }
+            if (!email || !email.includes('@')) { showError('Valid email is required'); return; }
+            if (!password || password.length < 8) { showError('Password must be at least 8 characters'); return; }
+            if (password !== passwordConfirm) { showError('Passwords do not match'); return; }
+            if (!termsAccepted) { showError('You must accept Terms & Conditions'); return; }
 
             try {
                 const res = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password, email, language })
+                    body: JSON.stringify({ username, email, password, language, userType: 'tester' })
                 });
                 const data = await res.json();
+
                 if (res.ok) {
-                    sessionStorage.setItem('k1_authenticated', 'true');
-                    localStorage.setItem('k1_user', username);
-                    // Save language preference
+                    // Show email verification step
+                    $('sentToEmail').textContent = email;
                     setCurrentLanguage(language);
-                    transitionToHologram();
+                    goToStep(3);
                 } else { showError(data.error || 'Registration failed'); }
             } catch (e) { showError('Connection error'); }
         };
     }
 
-    // Demo button - quick access
-    if (useDemoBtn) {
-        useDemoBtn.onclick = () => {
-            currentUsername = 'demo';
-            sessionStorage.setItem('k1_authenticated', 'true');
-            localStorage.setItem('k1_user', 'demo');
-            transitionToHologram();
+    // Language selector change - validation with audio
+    if (registerLanguage) {
+        registerLanguage.onchange = () => {
+            const lang = registerLanguage.value;
+            const message = LANG_MESSAGES[lang] || LANG_MESSAGES['en'];
+
+            // Show validation message
+            let validationEl = document.querySelector('.k1-lang-validation');
+            if (!validationEl) {
+                validationEl = document.createElement('div');
+                validationEl.className = 'k1-lang-validation';
+                registerLanguage.parentNode.appendChild(validationEl);
+            }
+            validationEl.innerHTML = `<span>✓</span> <span>${message}</span>`;
+
+            // Speak in that language
+            currentLanguage = lang;
+            speakWithBrowserTTS(message);
+
+            // Remove after 3 seconds
+            setTimeout(() => validationEl.remove(), 3000);
         };
     }
 
-    // Change user button
-    if (changeUserBtn) {
-        changeUserBtn.onclick = () => {
-            $('authPassword').value = '';
-            goToStep(1);
-            $('authIdentifier').focus();
-        };
-    }
+    // Back buttons
+    if (backToStep0Login) backToStep0Login.onclick = () => goToStep(0);
+    if (backToStep0Register) backToStep0Register.onclick = () => goToStep(0);
+    if (backToStep0Verify) backToStep0Verify.onclick = () => goToStep(0);
 
-    // Back button from registration
-    if (backToStep1Btn) {
-        backToStep1Btn.onclick = () => {
-            goToStep(1);
-            $('authIdentifier').focus();
+    // Resend email button
+    if (resendEmailBtn) {
+        resendEmailBtn.onclick = async () => {
+            const email = $('sentToEmail').textContent;
+            try {
+                await fetch('/api/resend-verification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                resendEmailBtn.textContent = 'Email sent!';
+                setTimeout(() => resendEmailBtn.textContent = 'Resend email', 3000);
+            } catch (e) { showError('Failed to resend'); }
         };
     }
 
