@@ -2162,12 +2162,16 @@ def api_chat():
     log_audit("assistant_output", {"text": ai["text"], "sources": ai.get("sources", []), "provider": AI_PROVIDER}, user_id=user_id, session_id=session_id)
 
     audio_url = None
-    # Only try server-side TTS if browser TTS is disabled and OpenAI is available
-    if not USE_BROWSER_TTS and OPENAI_API_KEY:
+    # Get user language - Romanian uses OpenAI TTS (onyx male voice)
+    user_lang = profile.get("language", "en") if profile else "en"
+    use_openai_for_ro = (user_lang == "ro")
+    
+    # Romanian = OpenAI TTS, other languages = browser TTS
+    if (use_openai_for_ro or not USE_BROWSER_TTS) and OPENAI_API_KEY:
         try:
             audio_url = call_openai_tts(ai["text"])
             if audio_url:
-                log_audit("tts_generated", {"audio_url": audio_url}, user_id=user_id, session_id=session_id)
+                log_audit("tts_generated", {"audio_url": audio_url, "lang": user_lang}, user_id=user_id, session_id=session_id)
         except Exception as e:
             log_audit("tts_error", {"error": str(e)}, user_id=user_id, session_id=session_id)
 
@@ -2199,7 +2203,7 @@ def api_chat():
         "sources": ai.get("sources", []),
         "animation": animation,
         "lipsync": lipsync,
-        "useBrowserTTS": USE_BROWSER_TTS  # Frontend will use Web Speech API
+        "useBrowserTTS": USE_BROWSER_TTS and not use_openai_for_ro  # Romanian uses server TTS
     }), 200
 
 # Alias endpoints (compatibility)
