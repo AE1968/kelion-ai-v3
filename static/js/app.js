@@ -5,17 +5,18 @@ import { HologramUnit } from "./holograma_k.js";
 // Language Management
 let currentLanguage = 'en';
 const VOICE_PREFS = {
-    'en': ['Microsoft David Desktop', 'Microsoft David', 'Google UK English Male', 'Daniel', 'Alex', 'Samantha'],
-    'ro': ['Microsoft Andrei', 'Andrei', 'Google română', 'Ioana'],
-    'de': ['Microsoft Stefan Desktop', 'Microsoft Stefan', 'Google Deutsch', 'Markus', 'Anna'],
-    'fr': ['Microsoft Paul Desktop', 'Microsoft Paul', 'Thomas', 'Google français', 'Amélie'],
-    'es': ['Microsoft Pablo Desktop', 'Microsoft Pablo', 'Jorge', 'Diego', 'Google español', 'Monica'],
-    'it': ['Microsoft Cosimo Desktop', 'Microsoft Cosimo', 'Luca', 'Google italiano', 'Alice'],
-    'pt': ['Microsoft Helia Desktop', 'Microsoft Helia', 'Google português', 'Luciana', 'Joana'],
-    'ru': ['Microsoft Pavel Desktop', 'Microsoft Pavel', 'Google русский', 'Milena', 'Yuri'],
-    'zh': ['Microsoft Huihui Desktop', 'Microsoft Huihui', 'Google 普通话', 'Ting-Ting', 'Lili'],
-    'ja': ['Microsoft Ayumi Desktop', 'Microsoft Ayumi', 'Google 日本語', 'Kyoko', 'Otoya'],
-    'default': ['Microsoft David Desktop', 'Microsoft David', 'Daniel', 'Alex']
+    // MALE ONLY - No female voices
+    'en': ['Microsoft David Desktop', 'Microsoft David', 'Google UK English Male', 'Daniel', 'Alex', 'Fred'],
+    'ro': ['Microsoft Andrei', 'Andrei'],  // NO Ioana
+    'de': ['Microsoft Stefan Desktop', 'Microsoft Stefan', 'Markus'],  // NO Anna
+    'fr': ['Microsoft Paul Desktop', 'Microsoft Paul', 'Thomas'],  // NO Amélie
+    'es': ['Microsoft Pablo Desktop', 'Microsoft Pablo', 'Jorge', 'Diego'],  // NO Monica
+    'it': ['Microsoft Cosimo Desktop', 'Microsoft Cosimo', 'Luca'],  // NO Alice
+    'pt': ['Microsoft Daniel', 'Cristiano'],  // NO Luciana/Joana
+    'ru': ['Microsoft Pavel Desktop', 'Microsoft Pavel', 'Yuri'],  // NO Milena
+    'zh': ['Kangkang', 'Sinji'],  // NO Huihui/Ting-Ting
+    'ja': ['Otoya', 'Hattori'],  // NO Ayumi/Kyoko
+    'default': ['Microsoft David Desktop', 'Microsoft David', 'Daniel', 'Fred']
 };
 
 function getCurrentUserLanguage() {
