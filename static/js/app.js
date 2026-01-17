@@ -446,6 +446,13 @@ function initLoginHandlers() {
     const toggleLoginPassword = $('toggleLoginPassword');
     const resendEmailBtn = $('k1ResendEmail');
     const registerLanguage = $('registerLanguage');
+    const accountTypeToggle = $('accountTypeToggle');
+    const toggleLabelDemo = $('toggleLabelDemo');
+    const toggleLabelUser = $('toggleLabelUser');
+    const toggleInfoText = $('toggleInfoText');
+
+    // Track account type (demo or user)
+    let isUserMode = true; // Default: User mode (toggle checked)
 
     // Language validation messages
     const LANG_MESSAGES = {
@@ -548,10 +555,11 @@ function initLoginHandlers() {
             if (!termsAccepted) { showError('You must accept Terms & Conditions'); return; }
 
             try {
+                const userType = isUserMode ? 'tester' : 'demo';
                 const res = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password, language, userType: 'tester' })
+                    body: JSON.stringify({ username, email, password, language, userType })
                 });
                 const data = await res.json();
 
@@ -599,6 +607,28 @@ function initLoginHandlers() {
             }
         };
     }
+
+    // Account type toggle handler (Demo/User)
+    if (accountTypeToggle) {
+        accountTypeToggle.onchange = () => {
+            isUserMode = accountTypeToggle.checked;
+
+            // Update labels
+            if (toggleLabelDemo) toggleLabelDemo.classList.toggle('k1-toggle-active', !isUserMode);
+            if (toggleLabelUser) toggleLabelUser.classList.toggle('k1-toggle-active', isUserMode);
+
+            // Update info text
+            if (toggleInfoText) {
+                toggleInfoText.textContent = isUserMode
+                    ? 'Full account with email verification'
+                    : 'Demo account (can upgrade later)';
+            }
+
+            // Form data persists - no need to clear
+            console.log('Account mode:', isUserMode ? 'USER' : 'DEMO');
+        };
+    }
+
     // Back buttons
     if (backToStep0Login) backToStep0Login.onclick = () => goToStep(0);
     if (backToStep0Register) backToStep0Register.onclick = () => goToStep(0);
