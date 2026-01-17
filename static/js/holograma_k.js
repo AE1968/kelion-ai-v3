@@ -62,6 +62,13 @@ export class HologramUnit {
     this.isFocused = false;
     this.lookTarget = new THREE.Vector2(0, 0); // Where it's looking
     this.lookPhase = 0;
+
+    // Natural eye movement
+    this.eyeLookTarget = new THREE.Vector2(0, 0);   // Current eye look direction
+    this.eyeLookCurrent = new THREE.Vector2(0, 0); // Interpolated position
+    this.nextEyeMove = 1 + Math.random() * 2;      // Time until next eye movement
+    this.eyeMoveTimer = 0;
+
     // Backend sends: animation (idle/speak/happy/empathetic) + emotion (calm/happy/empathetic)
     this.params = {
       state: 'idle',      // current animation state
@@ -770,13 +777,61 @@ export class HologramUnit {
       this.blinkTimer = 0;
       this.nextBlink = 2 + Math.random() * 4;
     }
+
+    // Natural eye movement - saccades and smooth tracking
+    this._updateEyeMovement(dt);
+  }
+
+  _updateEyeMovement(dt) {
+    // Timer for next random eye movement
+    this.eyeMoveTimer += dt;
+
+    if (this.eyeMoveTimer > this.nextEyeMove) {
+      // Generate new random look target (small movements, human-like)
+      if (this.isFocused || (this.params && this.params.isListening)) {
+        // When focused/listening, look mostly at user with tiny variations
+        this.eyeLookTarget.set(
+          (Math.random() - 0.5) * 0.1,
+          (Math.random() - 0.5) * 0.08
+        );
+      } else {
+        // Idle - larger, more exploratory movements
+        this.eyeLookTarget.set(
+          (Math.random() - 0.5) * 0.4,
+          (Math.random() - 0.5) * 0.25
+        );
+      }
+      this.eyeMoveTimer = 0;
+      this.nextEyeMove = 0.5 + Math.random() * 2.5; // Next movement in 0.5-3s
+    }
+
+    // Smooth interpolation to target (saccade-like quick movement then settle)
+    const lerpSpeed = 8.0; // Fast but smooth
+    this.eyeLookCurrent.x += (this.eyeLookTarget.x - this.eyeLookCurrent.x) * dt * lerpSpeed;
+    this.eyeLookCurrent.y += (this.eyeLookTarget.y - this.eyeLookCurrent.y) * dt * lerpSpeed;
+
+    // Apply to eye bones
+    for (const eyeBone of this.eyeBones) {
+      if (eyeBone) {
+        // Y rotation for left-right look, X for up-down
+        eyeBone.rotation.y = this.eyeLookCurrent.x;
+        // Don't override X if we're blinking
+        if (!this._isBlinking) {
+          eyeBone.rotation.x = this.eyeLookCurrent.y;
+        }
+      }
+    }
   }
 
   _doBlink() {
     const bones = this.eyeBones || [];
     if (!bones.length) return;
+    this._isBlinking = true;
     for (const b of bones) b.rotation.x += 0.35;
-    setTimeout(() => { for (const b of bones) b.rotation.x -= 0.35; }, 90);
+    setTimeout(() => {
+      for (const b of bones) b.rotation.x -= 0.35;
+      this._isBlinking = false;
+    }, 90);
   }
 
   updateLipSync() {
@@ -795,20 +850,33 @@ export class HologramUnit {
       this._wasSpeeking = true;
 
       this.analyser.getByteFrequencyData(this.dataArray);
-      // intensity 0..1
+
+      // Calculate audio intensity with threshold
       let sum = 0;
       for (let i = 0; i < this.dataArray.length; i++) sum += this.dataArray[i];
-      const intensity = Math.min(1, sum / 15000);
+      const rawIntensity = sum / 15000;
+
+      // Apply threshold - mouth doesn't move for very quiet/silent parts
+      const threshold = 0.05;
+      const intensity = rawIntensity > threshold ?
+        Math.min(1, (rawIntensity - threshold) / (1 - threshold)) : 0;
+
+      // Smooth the intensity for more natural movement
+      if (!this._lastMouthIntensity) this._lastMouthIntensity = 0;
+      const smoothing = 0.3; // Lower = smoother
+      this._lastMouthIntensity += (intensity - this._lastMouthIntensity) * smoothing;
+      const smoothIntensity = this._lastMouthIntensity;
 
       if (this.jawBone) {
-        this.jawBone.rotation.x = -intensity * 0.20;
+        this.jawBone.rotation.x = -smoothIntensity * 0.22;
       }
       for (const mt of this.morphTargets) {
-        mt.mesh.morphTargetInfluences[mt.idx] = intensity * 0.8;
+        mt.mesh.morphTargetInfluences[mt.idx] = smoothIntensity * 0.85;
       }
     } else if (this._wasSpeeking) {
-      // Just stopped speaking - reset mouth ONCE, not every frame
+      // Just stopped speaking - smoothly close mouth
       this._wasSpeeking = false;
+      this._lastMouthIntensity = 0;
 
       if (this.jawBone) {
         this.jawBone.rotation.x = 0;
