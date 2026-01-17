@@ -483,17 +483,20 @@ let narratorActive = false;
 function initIntroPage() {
     const introLayer = $('k1IntroLayer');
     const enterBtn = $('k1EnterBtn');
+
+    // Hide the enter button - auto-init instead
+    if (enterBtn) enterBtn.style.display = 'none';
+
     if (!introLayer) { if (isUserLoggedIn()) initHologramAndApp(); else showLanguageSelection(); return; }
     createParticles($('introParticles'));
-    setTimeout(() => { if (!narratorActive) playIntroNarration(); }, 1000);
 
-    const enterApp = () => {
+    // Auto-transition after narration completes
+    const autoTransition = () => {
         if (introLayer.classList.contains('exiting')) return;
-        sessionStorage.clear(); // Clear previous sessions
+        sessionStorage.clear();
         if (speechSynthesis) speechSynthesis.cancel();
         narratorActive = false;
         introLayer.classList.add('exiting');
-        // Go to Language Selection (Page 2) instead of login
         setTimeout(() => {
             introLayer.style.display = 'none';
             if (isUserLoggedIn()) initHologramAndApp();
@@ -501,8 +504,17 @@ function initIntroPage() {
         }, 1000);
     };
 
-    if (enterBtn) enterBtn.onclick = enterApp;
-    document.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); enterApp(); } }, { once: true });
+    // Play narration then auto-transition
+    setTimeout(() => {
+        if (!narratorActive) {
+            playIntroNarration();
+            // Auto-transition after narration (approx 8 seconds)
+            setTimeout(autoTransition, 8000);
+        }
+    }, 1000);
+
+    // Allow skip with Space key
+    document.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); autoTransition(); } }, { once: true });
 }
 
 // ======================================
@@ -513,42 +525,8 @@ let selectedLanguageCode = 'en';
 let languageHolo = null;
 
 function showLanguageSelection() {
-    const langLayer = $('k1LanguageLayer');
-    if (!langLayer) { showLoginPage(); return; }
-
-    langLayer.style.display = 'flex';
-    createParticles($('languageParticles'));
-
-    // Set time-based greeting WITH VOICE
-    const hour = new Date().getHours();
-    let greeting = 'Hello!';
-    if (hour >= 5 && hour < 12) greeting = 'Good morning!';
-    else if (hour >= 12 && hour < 18) greeting = 'Good afternoon!';
-    else if (hour >= 18 && hour < 22) greeting = 'Good evening!';
-
-    const titleEl = $('k1TimeGreeting');
-    const subtitleEl = $('langSubtitle');
-    const responseEl = $('k1LangResponse');
-    const fullPrompt = greeting + ' Type something in your language, then press ENTER';
-
-    if (titleEl) titleEl.textContent = greeting;
-    if (subtitleEl) subtitleEl.textContent = 'Type something in your language, then press ENTER';
-    // K asks directly about language
-    if (responseEl) responseEl.textContent = 'What language would you like me to speak?';
-
-    // NARRATOR SPEAKS THE GREETING (in English)
-    setTimeout(() => {
-        speakWithBrowserTTS(fullPrompt, null, null);
-    }, 500);
-
-    // Initialize text input handlers
-    initLanguageInputHandlers();
-
-    // Focus input after animation
-    setTimeout(() => {
-        const input = $('k1LangInput');
-        if (input) input.focus();
-    }, 500);
+    // PAGE 2 REMOVED - Go directly to login
+    showLoginPage();
 }
 
 // Language detection patterns - common words/phrases by language
