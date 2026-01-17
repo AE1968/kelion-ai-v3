@@ -901,6 +901,56 @@ export class HologramUnit {
     this._applyViseme("REST", 0.1);
   }
 
+  // Sync Monitor: Continuously monitor hologram for desynchronization
+  // Checks mouth, nose, face elements and auto-corrects drift
+  syncMonitor() {
+    if (!this.mesh) return;
+
+    // Check morph targets exist and are in valid range
+    const morphTargets = this.mesh.morphTargetInfluences;
+    if (!morphTargets) return;
+
+    let needsReset = false;
+
+    // Check for NaN or out-of-range values
+    for (let i = 0; i < morphTargets.length; i++) {
+      if (isNaN(morphTargets[i]) || morphTargets[i] < -0.1 || morphTargets[i] > 1.5) {
+        console.warn('🔧 Sync issue detected in morph target', i, morphTargets[i]);
+        morphTargets[i] = 0;
+        needsReset = true;
+      }
+    }
+
+    // If not speaking, ensure mouth morphs are near zero
+    if (!this.analyser && !this.isSpeaking) {
+      const mouthMorphs = ['jawOpen', 'mouthOpen', 'viseme_aa', 'viseme_O', 'viseme_E'];
+      const dict = this.mesh.morphTargetDictionary;
+      if (dict) {
+        for (const name of mouthMorphs) {
+          if (dict[name] !== undefined) {
+            const idx = dict[name];
+            if (morphTargets[idx] > 0.15) {
+              // Smoothly return to closed
+              morphTargets[idx] *= 0.85;
+            }
+          }
+        }
+      }
+    }
+
+    // Monitor rotation drift
+    if (this.hologramGroup) {
+      const rot = this.hologramGroup.rotation;
+      // Clamp excessive rotations
+      if (Math.abs(rot.x) > 0.5) rot.x = Math.sign(rot.x) * 0.5;
+      if (Math.abs(rot.z) > 0.3) rot.z = Math.sign(rot.z) * 0.3;
+    }
+
+    if (needsReset) {
+      console.log('🔧 Hologram sync auto-corrected');
+    }
+  }
+
   resize() {
     if (!this.container || !this.camera || !this.renderer) return;
     const w = this.container.clientWidth;
@@ -931,6 +981,7 @@ export class HologramUnit {
     this.updateProcedural(delta); // delta is already in seconds, no multiplication!
     this.updateVisemes();
     this.updateLipSync();
+    this.syncMonitor(); // Monitor for desync issues
 
     // Render directly - simpler and more reliable
     this.renderer.render(this.scene, this.camera);
