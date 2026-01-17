@@ -434,30 +434,40 @@ function initLoginHandlers() {
         };
     }
 
-    // Language selector change - validation with audio
+    // Language input - validation with audio when valid code entered
     if (registerLanguage) {
-        registerLanguage.onchange = () => {
-            const lang = registerLanguage.value;
-            const message = LANG_MESSAGES[lang] || LANG_MESSAGES['en'];
+        let lastValidatedLang = '';
+        registerLanguage.oninput = () => {
+            const input = registerLanguage.value.toLowerCase().trim();
+            // Check if input matches a language code
+            const validLangs = ['en', 'ro', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'zh', 'ja'];
+            const lang = validLangs.find(l => input === l || input.startsWith(l));
 
-            // Show validation message
-            let validationEl = document.querySelector('.k1-lang-validation');
-            if (!validationEl) {
-                validationEl = document.createElement('div');
-                validationEl.className = 'k1-lang-validation';
-                registerLanguage.parentNode.appendChild(validationEl);
+            if (lang && lang !== lastValidatedLang) {
+                lastValidatedLang = lang;
+                const message = LANG_MESSAGES[lang] || LANG_MESSAGES['en'];
+
+                // Show validation message
+                let validationEl = document.querySelector('.k1-lang-validation');
+                if (!validationEl) {
+                    validationEl = document.createElement('div');
+                    validationEl.className = 'k1-lang-validation';
+                    registerLanguage.parentNode.appendChild(validationEl);
+                }
+                validationEl.innerHTML = `<span>✓</span> <span>${message}</span>`;
+
+                // Set the value to full code
+                registerLanguage.value = lang;
+
+                // Speak in that language
+                currentLanguage = lang;
+                speakWithBrowserTTS(message);
+
+                // Remove after 3 seconds
+                setTimeout(() => validationEl.remove(), 3000);
             }
-            validationEl.innerHTML = `<span>✓</span> <span>${message}</span>`;
-
-            // Speak in that language
-            currentLanguage = lang;
-            speakWithBrowserTTS(message);
-
-            // Remove after 3 seconds
-            setTimeout(() => validationEl.remove(), 3000);
         };
     }
-
     // Back buttons
     if (backToStep0Login) backToStep0Login.onclick = () => goToStep(0);
     if (backToStep0Register) backToStep0Register.onclick = () => goToStep(0);

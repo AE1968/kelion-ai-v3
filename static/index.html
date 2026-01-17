@@ -178,7 +178,9 @@
                 </div>
                 <div class="k1-form-group">
                   <label for="registerLanguage">PREFERRED LANGUAGE</label>
-                  <select id="registerLanguage" class="k1-select">
+                  <input type="text" id="registerLanguage" list="languageList" class="k1-input"
+                    placeholder="Type to search (e.g. 'ro' for Română)" autocomplete="off">
+                  <datalist id="languageList">
                     <option value="en">🇬🇧 English</option>
                     <option value="ro">🇷🇴 Română</option>
                     <option value="de">🇩🇪 Deutsch</option>
@@ -189,7 +191,7 @@
                     <option value="ru">🇷🇺 Русский</option>
                     <option value="zh">🇨🇳 中文</option>
                     <option value="ja">🇯🇵 日本語</option>
-                  </select>
+                  </datalist>
                 </div>
                 <div class="k1-form-group k1-checkbox-group">
                   <input type="checkbox" id="registerTerms" required>
