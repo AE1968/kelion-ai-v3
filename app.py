@@ -1045,11 +1045,13 @@ def track_demo_session(client_ip: str, action: str):
 
 @app.post("/api/register")
 def api_register():
-    """Register a new user with password hashing."""
+    """Register a new user with password hashing and email verification."""
     payload = request.get_json(silent=True) or {}
     username = (payload.get("username") or payload.get("userId") or payload.get("user") or "").strip()
     password = payload.get("password") or ""
     email = (payload.get("email") or "").strip()
+    language = (payload.get("language") or "en").strip()
+    user_type = (payload.get("userType") or "tester").strip()  # demo, tester, normal
     
     if not username:
         return jsonify({"error": "Username required"}), 400
@@ -1057,14 +1059,15 @@ def api_register():
         return jsonify({"error": "Username must be at least 3 characters"}), 400
     if not password:
         return jsonify({"error": "Password required"}), 400
-    if len(password) < 4:
-        return jsonify({"error": "Password must be at least 4 characters"}), 400
+    if len(password) < 8:
+        return jsonify({"error": "Password must be at least 8 characters"}), 400
+    if not email or "@" not in email:
+        return jsonify({"error": "Valid email required"}), 400
     
     # Check if user already exists
     with db() as con:
         existing = con.execute("SELECT user_id FROM users WHERE user_id = ?", (username,)).fetchone()
         if existing:
-            # Check if user has a password set (registered user) vs auto-created
             row = con.execute("SELECT profile_json FROM users WHERE user_id = ?", (username,)).fetchone()
             if row:
                 try:
@@ -1077,34 +1080,42 @@ def api_register():
     # Hash password and create user
     password_hash = hash_password(password)
     profile = {
-        "language": DEFAULT_LANGUAGE,
+        "language": language,
         "persona": PERSONA_STYLE,
         "password_hash": password_hash,
         "email": email,
+        "email_verified": False,
+        "user_type": user_type,  # demo, tester, normal
         "tier": "Starter",
         "registered_at": utc_now_iso()
     }
     
     upsert_user(username, profile=profile)
-    log_audit("register", {"username": username, "has_email": bool(email)}, user_id=username, session_id="web")
+    log_audit("register", {"username": username, "email": email, "user_type": user_type}, user_id=username, session_id="web")
     
-    # Send welcome email if email provided and SMTP configured
-    if email and SMTP_USER:
+    # Send verification email if SMTP configured
+    if SMTP_USER:
         try:
-            send_welcome_email(email, username)
+            token = create_token(username, "email_verify", expires_hours=48)
+            verify_url = f"{request.host_url}verify-email?token={token}&user={username}"
+            html_body = f"""
+            <h1>Welcome to KELION AI!</h1>
+            <p>Hi {username},</p>
+            <p>Please verify your email address by clicking the link below:</p>
+            <p><a href="{verify_url}" style="background:#00f3ff;color:#000;padding:10px 20px;text-decoration:none;border-radius:5px;">Verify Email</a></p>
+            <p>This link expires in 48 hours.</p>
+            <p>— The KELION AI Team</p>
+            """
+            send_email(email, "Verify your KELION AI account", html_body, f"Verify your email: {verify_url}")
         except Exception as e:
-            logger.warning(f"Failed to send welcome email: {e}")
-    
-    # Generate session token
-    session_token = str(uuid.uuid4())
+            logger.warning(f"Failed to send verification email: {e}")
     
     return jsonify({
         "ok": True,
         "userId": username,
-        "token": session_token,
-        "mode": "OpenAI",
-        "status": "active",
-        "version": "k1.1.0"
+        "email_sent": bool(SMTP_USER),
+        "status": "pending_verification",
+        "version": "v3.0.0"
     }), 201
 
 
@@ -1482,6 +1493,54 @@ def api_verify_email():
     
     log_audit("email_verified", {"user_id": user_id}, user_id=user_id)
     return jsonify({"ok": True, "message": "Email verified successfully"}), 200
+
+
+@app.post("/api/resend-verification")
+def api_resend_verification():
+    """Resend email verification link."""
+    payload = request.get_json(silent=True) or {}
+    email = (payload.get("email") or "").strip()
+    
+    if not email:
+        return jsonify({"error": "Email required"}), 400
+    
+    # Find user by email
+    with db() as con:
+        rows = con.execute("SELECT user_id, profile_json FROM users").fetchall()
+        user_id = None
+        for row in rows:
+            try:
+                profile = json.loads(row["profile_json"])
+                if profile.get("email") == email:
+                    user_id = row["user_id"]
+                    if profile.get("email_verified"):
+                        return jsonify({"error": "Email already verified"}), 400
+                    break
+            except:
+                continue
+    
+    if not user_id:
+        return jsonify({"error": "Email not found"}), 404
+    
+    # Send new verification email
+    if SMTP_USER:
+        try:
+            token = create_token(user_id, "email_verify", expires_hours=48)
+            verify_url = f"{request.host_url}verify-email?token={token}&user={user_id}"
+            html_body = f"""
+            <h1>KELION AI - Email Verification</h1>
+            <p>Hi {user_id},</p>
+            <p>Click the link below to verify your email:</p>
+            <p><a href="{verify_url}" style="background:#00f3ff;color:#000;padding:10px 20px;text-decoration:none;border-radius:5px;">Verify Email</a></p>
+            <p>This link expires in 48 hours.</p>
+            """
+            send_email(email, "Verify your KELION AI account", html_body, f"Verify your email: {verify_url}")
+            return jsonify({"ok": True, "message": "Verification email sent"}), 200
+        except Exception as e:
+            logger.warning(f"Failed to resend verification: {e}")
+            return jsonify({"error": "Failed to send email"}), 500
+    
+    return jsonify({"error": "Email service not configured"}), 503
 
 
 # ============================================

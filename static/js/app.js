@@ -289,6 +289,137 @@ function stopRecording() {
     const btn = $("btnMic"); if (btn) btn.classList.remove("listening");
 }
 
+// ============================================
+// WAKE WORD DETECTION - Always Listening Mode
+// ============================================
+let wakeWordRecognition = null;
+let isWakeWordActive = false;
+let commandRecognition = null;
+
+function initWakeWordDetection() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        console.log('Wake word detection not supported');
+        return;
+    }
+
+    wakeWordRecognition = new SpeechRecognition();
+    wakeWordRecognition.continuous = true;
+    wakeWordRecognition.interimResults = true;
+    wakeWordRecognition.lang = 'en-US';
+
+    wakeWordRecognition.onresult = (event) => {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript.toLowerCase().trim();
+            // Wake words: "k", "kelion", "hey k", "okay k"
+            if (transcript.includes('kelion') || transcript === 'k' ||
+                transcript.includes('hey k') || transcript.includes('okay k') ||
+                transcript.endsWith(' k') || transcript.startsWith('k ')) {
+
+                console.log('🎤 Wake word detected:', transcript);
+                activateListening();
+                break;
+            }
+        }
+    };
+
+    wakeWordRecognition.onend = () => {
+        // Restart if not in command mode
+        if (!isWakeWordActive && wakeWordRecognition) {
+            setTimeout(() => {
+                try { wakeWordRecognition.start(); } catch (e) { }
+            }, 100);
+        }
+    };
+
+    wakeWordRecognition.onerror = (e) => {
+        if (e.error !== 'no-speech' && e.error !== 'aborted') {
+            console.log('Wake word error:', e.error);
+        }
+    };
+}
+
+function startWakeWordListening() {
+    if (!wakeWordRecognition) initWakeWordDetection();
+    if (wakeWordRecognition && !isWakeWordActive) {
+        try {
+            wakeWordRecognition.start();
+            console.log('🎧 Always listening mode active - say "K" or "Kelion"');
+        } catch (e) { }
+    }
+}
+
+function activateListening() {
+    isWakeWordActive = true;
+    if (wakeWordRecognition) {
+        try { wakeWordRecognition.stop(); } catch (e) { }
+    }
+
+    // Stop hologram rotation
+    if (holo) {
+        holo.setListening(true);
+    }
+
+    // Visual feedback
+    const chatBtn = $('toggleChatBtn');
+    if (chatBtn) chatBtn.classList.add('wake-active');
+
+    // Start command recognition
+    startCommandRecognition();
+}
+
+function startCommandRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    commandRecognition = new SpeechRecognition();
+    commandRecognition.continuous = false;
+    commandRecognition.interimResults = false;
+    commandRecognition.lang = currentLanguage === 'ro' ? 'ro-RO' :
+        currentLanguage === 'de' ? 'de-DE' :
+            currentLanguage === 'fr' ? 'fr-FR' :
+                currentLanguage === 'es' ? 'es-ES' : 'en-US';
+
+    commandRecognition.onresult = (event) => {
+        const command = event.results[0][0].transcript;
+        console.log('📝 Command:', command);
+        sendText(command);
+        deactivateListening();
+    };
+
+    commandRecognition.onend = () => {
+        deactivateListening();
+    };
+
+    commandRecognition.onerror = (e) => {
+        console.log('Command error:', e.error);
+        deactivateListening();
+    };
+
+    // Speak acknowledgment
+    speakWithBrowserTTS('Yes?', null, null);
+
+    setTimeout(() => {
+        try { commandRecognition.start(); } catch (e) { }
+    }, 500);
+}
+
+function deactivateListening() {
+    isWakeWordActive = false;
+
+    // Resume hologram rotation
+    if (holo) {
+        holo.setListening(false);
+    }
+
+    // Remove visual feedback
+    const chatBtn = $('toggleChatBtn');
+    if (chatBtn) chatBtn.classList.remove('wake-active');
+
+    // Restart wake word listening
+    setTimeout(startWakeWordListening, 1000);
+}
+
 // Login System
 function isUserLoggedIn() { return sessionStorage.getItem('k1_authenticated') === 'true'; }
 
