@@ -1142,7 +1142,6 @@ function stopNarrator() {
 
 function initIntroPage() {
   const introLayer = document.getElementById('k1IntroLayer');
-  const enterBtn = document.getElementById('k1EnterBtn');
   const loginLayer = document.getElementById('k1LoginLayer');
 
   if (!introLayer) {
@@ -1159,70 +1158,51 @@ function initIntroPage() {
   const particlesContainer = document.getElementById('introParticles');
   createIntroParticles(particlesContainer);
 
-  // Narrator needs user interaction to play (browser autoplay policy)
-  // Start speaking as soon as user clicks anywhere on intro
-  let narratorStarted = false;
-  const startNarratorOnClick = () => {
-    if (narratorStarted) return;
-    narratorStarted = true;
-    console.log('User clicked - starting narrator...');
-    playIntroNarration();
-    introLayer.removeEventListener('click', startNarratorOnClick);
-  };
-  introLayer.addEventListener('click', startNarratorOnClick);
-
-  // Also try to start immediately (will work if voices are loaded)
-  setTimeout(() => {
-    if (!narratorStarted) {
-      playIntroNarration();
-    }
-  }, 500);
-
-  // Transition function - now goes to LOGIN, not hologram
+  // Transition function - goes directly to LOGIN
   const enterApp = () => {
     if (introLayer.classList.contains('exiting')) return;
 
     // Unlock audio context on user gesture (required for autoplay)
     unlockAudioContext();
 
-    // Start narrator voice NOW (user just clicked, so autoplay is allowed)
-    playIntroNarration();
+    // Add exit animation to intro
+    introLayer.classList.add('exiting');
 
-    // Add exit animation to intro after short delay so user hears narration start
+    // Wait for exit animation, then show login
     setTimeout(() => {
-      introLayer.classList.add('exiting');
+      introLayer.style.display = 'none';
+      // Stop narrator when transitioning
+      stopNarrator();
 
-      // Wait for exit animation, then show login
-      setTimeout(() => {
-        introLayer.style.display = 'none';
-        // Stop narrator when transitioning
-        stopNarrator();
-
-        // Check if already logged in
-        if (isUserLoggedIn()) {
-          initHologramAndApp();
-        } else {
-          showLoginPage();
-        }
-      }, 1000);
-    }, 100);
+      // Check if already logged in
+      if (isUserLoggedIn()) {
+        initHologramAndApp();
+      } else {
+        showLoginPage();
+      }
+    }, 800);
   };
-  // Button click
-  if (enterBtn) {
-    enterBtn.addEventListener('click', enterApp);
-  }
 
-  // Space key trigger
-  const handleKeyOrClick = (e) => {
-    const buttonVisible = enterBtn && window.getComputedStyle(enterBtn).opacity !== '0';
-    if (e.type === 'keydown' && e.code === 'Space' && buttonVisible) {
+  // AUTO TRANSITION: After 3 seconds, go to login automatically
+  setTimeout(() => {
+    console.log('Auto-transitioning to login page...');
+    enterApp();
+  }, 3000);
+
+  // Also allow click anywhere on intro to skip immediately
+  introLayer.addEventListener('click', () => {
+    enterApp();
+  });
+
+  // Space key to skip
+  const handleKeySkip = (e) => {
+    if (e.code === 'Space' || e.code === 'Enter') {
       e.preventDefault();
       enterApp();
-      document.removeEventListener('keydown', handleKeyOrClick);
+      document.removeEventListener('keydown', handleKeySkip);
     }
   };
-
-  document.addEventListener('keydown', handleKeyOrClick);
+  document.addEventListener('keydown', handleKeySkip);
 }
 
 // ======================================
