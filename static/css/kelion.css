@@ -1,4 +1,3 @@
-r pe git?
 :root {
   --cyan: #00f3ff;
   --pink: #ff00ff;
@@ -6,7 +5,7 @@ r pe git?
   --panel: rgba(0, 15, 30, 0.95);
   --border: rgba(0, 243, 255, 0.35);
   --glow: 0 0 20px rgba(0, 243, 255, 0.25);
-  --text: #d7feff;f
+  --text: #d7feff;
   --muted: #7fdde0;
   --danger: #ff4d6d;
 }
@@ -4777,7 +4776,7 @@ textarea {
 }
 
 .k1-login-subtitle {
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
   font-size: 12px;
 }
@@ -4803,7 +4802,7 @@ textarea {
 
 .k1-login-form .k1-form-group label {
   font-size: 10px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -4824,7 +4823,7 @@ textarea {
 }
 
 .k1-login-form .k1-form-group input::placeholder {
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
 }
 
 /* SUBMIT BUTTON */
@@ -4878,7 +4877,7 @@ textarea {
 }
 
 .k1-forgot-password a {
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 11px;
   text-decoration: none;
 }
@@ -4926,7 +4925,10 @@ textarea {
 }
 
 @keyframes fadeOut {
-  to { opacity: 0; pointer-events: none; }
+  to {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 /* Responsive - smaller screens */
@@ -4934,31 +4936,31 @@ textarea {
   .k1-login-card {
     padding: 20px;
   }
-  
+
   .k1-login-header {
     margin-bottom: 15px;
   }
-  
+
   .k1-login-logo {
     width: 48px;
     height: 48px;
     font-size: 20px;
   }
-  
+
   .k1-login-title {
     font-size: 18px;
   }
-  
+
   .k1-login-form .k1-form-group input {
     padding: 8px 10px;
     font-size: 12px;
   }
-  
+
   .k1-login-form .k1-submit-btn {
     padding: 10px;
     font-size: 12px;
   }
-  
+
   .k1-testing-notice {
     padding: 8px 10px;
     font-size: 11px;

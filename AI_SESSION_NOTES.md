@@ -24,7 +24,7 @@
 ## Current Status (Last Updated: 2026-01-18)
 - ✅ Rollback to commit ffd6db3 - "Exclude female voices in TTS fallback"
 - ✅ Male voice (OpenAI Onyx) for Romanian TTS
-- ✅ Registration form fixes
+- ✅ **USER REGISTRATION FIX** - Switched to app_fixed.js + added login layer CSS
 - ✅ Hologram display working
 
 ## User Preferences
@@ -34,6 +34,7 @@
 
 ## Key Files
 - `app.py` - Main Flask backend
-- `static/js/app.js` - Frontend logic
+- `static/js/app_fixed.js` - Frontend logic (ACTIVE - contains login/register)
+- `static/js/app.js` - OLD file (not used)
 - `voice_module.py` - TTS voice handling
-- `static/css/kelion.css` - Styling
+- `static/css/kelion.css` - Styling (includes login layer styles)
